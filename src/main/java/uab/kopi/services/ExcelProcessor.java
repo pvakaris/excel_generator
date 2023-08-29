@@ -97,8 +97,8 @@ public class ExcelProcessor {
                 return;
             }
 
-            Alerter.displayResult("Duomenys sėkmingai apdoroti ir išsaugoti.\nNauja Excel'io lentelė išsaugota faile " + EXCEL_FILE_NAME + ".\nDuomenų apdorojimo paaiškinimas " +
-                    "išsaugotas faile " + TEXT_FILE_NAME + ".\nAbu failai išsaugoti: " + folder.getAbsolutePath());
+            Alerter.displayResult("Duomenys sėkmingai apdoroti ir išsaugoti.\n\nNauja Excel'io lentelė išsaugota faile " + EXCEL_FILE_NAME + ".\n\nDuomenų apdorojimo paaiškinimas " +
+                    "išsaugotas faile " + TEXT_FILE_NAME + ".\n\nAbu failai išsaugoti: " + folder.getAbsolutePath());
         } catch (Exception e) {
             handleUnknownError(e);
         }
@@ -279,11 +279,11 @@ public class ExcelProcessor {
     }
 
     /**
-     * Determines the index of the last data row in the given sheet.
+     * Finds the index of the last data row based on row lengths and empty cells.
      *
-     * @param sheet The sheet to find the last data row index.
+     * @param sheet        The Excel sheet containing the data.
      * @param firstDataIdx The index of the first data row.
-     * @return Index of the last data row.
+     * @return The index of the last data row.
      */
     private static int lastDataIdx(Sheet sheet, int firstDataIdx) {
         logger.info("Searching for the last data row");
@@ -293,8 +293,7 @@ public class ExcelProcessor {
         for (int rowIndex = firstDataIdx + 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
             Row currentRow = sheet.getRow(rowIndex);
             Row previousRow = sheet.getRow(rowIndex - 1);
-            System.out.println("Current ID: " + rowIndex);
-            System.out.println("Previous ID: " + (rowIndex-1));
+
             // Check if the current row is empty or shorter than the previous row
             if (currentRow == null || isRowShorter(currentRow, previousRow)) {
                 break; // Data ends here
@@ -307,23 +306,33 @@ public class ExcelProcessor {
     }
 
     /**
-     * Determines if a given row is shorter than another row or is empty.
+     * Checks if the given row is shorter than the previous row or contains only empty cells.
      *
-     * @param row1 The first row for comparison.
-     * @param row2 The second row for comparison.
-     * @return True if row1 is shorter than row2 or is empty, false otherwise.
+     * @param currentRow The current row to be checked.
+     * @param previousRow The previous row for comparison.
+     * @return True if the current row is shorter or contains only empty cells, false otherwise.
      */
-    private static boolean isRowShorter(Row row1, Row row2) {
-        if (row1 == null || row2 == null) {
-            return false; // One of the rows is null, so not shorter
+    private static boolean isRowShorter(Row currentRow, Row previousRow) {
+        if (currentRow == null) {
+            return true; // Current row is null, so it's considered shorter
         }
 
-        int numCellsInRow1 = row1.getLastCellNum();
-        int numCellsInRow2 = row2.getLastCellNum();
+        int numCellsInCurrentRow = currentRow.getLastCellNum();
+        int numCellsInPreviousRow = previousRow != null ? previousRow.getLastCellNum() : 0;
 
-        System.out.println("Current row length: " + numCellsInRow1 + ". First element ---> " + row1.getCell(0));
-        System.out.println("Previous row length: " + numCellsInRow2 + ". First element ---> " + row2.getCell(0) + "\n");
-        return numCellsInRow1 < numCellsInRow2;
+        if (numCellsInCurrentRow < numCellsInPreviousRow) {
+            return true; // Current row is shorter than the previous row
+        }
+
+        // Check if the cells in the current row are all empty
+        for (int cellNum = 0; cellNum < numCellsInCurrentRow; cellNum++) {
+            Cell cell = currentRow.getCell(cellNum);
+            if (cell != null && !cell.toString().isEmpty()) {
+                return false; // Current row has non-empty cells
+            }
+        }
+
+        return true; // Current row has only empty cells
     }
 
 
